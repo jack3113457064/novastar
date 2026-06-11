@@ -54,6 +54,7 @@ select option { background: #1a1030; color: #fff; }
   <div class="nav">
     <button class="active" onclick="switchTab('dashboard')">📊 仪表盘</button>
     <button onclick="switchTab('stake')">🔒 质押</button>
+    <button onclick="switchTab('account')">👤 账户</button>
   </div>
 
   <!-- 仪表盘 -->
@@ -162,6 +163,46 @@ select option { background: #1a1030; color: #fff; }
         <b>方式三：扫二维码</b><br>
         用钱包 App 扫码打开官网（功能开发中）
       </p>
+    </div>
+  </div>
+
+  <!-- 账户 -->
+  <div id="account" class="tab-content">
+    <div class="card" id="acctLogin" style="text-align:center;">
+      <h3>👤 连接钱包登录</h3>
+      <p style="color:#889;margin:10px 0;">无需邮箱密码，钱包即账户</p>
+      <button class="btn" onclick="connectAccount()" style="font-size:18px;padding:14px 40px;">🔗 连接 MetaMask 登录</button>
+    </div>
+
+    <div class="card" id="acctInfo" style="display:none;">
+      <div style="text-align:center;margin-bottom:15px;">
+        <div style="width:60px;height:60px;background:linear-gradient(135deg,#e94560,#ff6b6b);border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:28px;">N</div>
+        <h3 id="acctName" style="margin:8px 0;">NOVA Holder</h3>
+        <span style="color:#889;font-family:monospace;font-size:12px;" id="acctAddr"></span>
+        <button class="btn btn-outline" onclick="editNickname()" style="font-size:12px;padding:4px 12px;margin-top:6px;">✏️ 编辑昵称</button>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><div class="val" id="acctNova">--</div><div class="label">NOVA 余额</div></div>
+        <div class="stat"><div class="val" id="acctBnb">--</div><div class="label">BNB 余额</div></div>
+        <div class="stat"><div class="val" id="acctStakes">--</div><div class="label">质押笔数</div></div>
+        <div class="stat"><div class="val" id="acctValue">--</div><div class="label">总估值 USD</div></div>
+      </div>
+    </div>
+
+    <div class="card" id="acctStakeDetail" style="display:none;">
+      <h3>📋 我的质押</h3>
+      <div id="acctStakeList"></div>
+    </div>
+
+    <div class="card">
+      <h3>🔗 分享邀请</h3>
+      <p style="color:#889;font-size:13px;">复制链接发给朋友，他们打开就能交易</p>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <input type="text" id="inviteLink" readonly value="https://jack3113457064.github.io/novastar/?v=5" style="flex:1;">
+        <button class="btn" onclick="copyInvite()" style="white-space:nowrap;">📋 复制</button>
+      </div>
+      <p id="copyMsg" style="font-size:12px;color:#27ae60;margin-top:4px;"></p>
     </div>
   </div>
 </div>
