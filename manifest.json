@@ -1,0 +1,17 @@
+{
+  "name": "NovaStar",
+  "short_name": "NOVA",
+  "description": "NovaStar — Decentralized Community Token",
+  "start_url": "/novastar/?v=5",
+  "display": "standalone",
+  "background_color": "#0a0a1a",
+  "theme_color": "#e94560",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    }
+  ]
+}
