@@ -3,26 +3,33 @@ const NOVA_ADDR = '0xA59bd1777e8eB5A20Ee51a6CF7C51aA31b6a18e5';
 const STAKE_ADDR = '0x1611f15529148AB0C302Eed557d3C1F6e9918F18';
 const BSC_CHAIN_ID = '0x38'; // 56
 
-// 自动切换 BSC 网络
+// 强制切换 BSC 网络（兼容手机钱包）
 async function ensureBSC(){
-  if(!window.ethereum) return;
+  if(!window.ethereum) return alert('请用钱包内置浏览器打开此页面');
+  const BSC = {
+    chainId:'0x38',
+    chainName:'BNB Smart Chain',
+    rpcUrls:['https://bsc-rpc.publicnode.com','https://bsc-dataseed.binance.org/'],
+    nativeCurrency:{name:'BNB',symbol:'BNB',decimals:18},
+    blockExplorerUrls:['https://bscscan.com']
+  };
   try {
-    const chainId = await ethereum.request({method:'eth_chainId'});
-    if(chainId !== BSC_CHAIN_ID){
-      try {
-        await ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:BSC_CHAIN_ID}]});
-      } catch(e){
-        // BSC 网络不存在，添加
-        await ethereum.request({method:'wallet_addEthereumChain',params:[{
-          chainId:BSC_CHAIN_ID,
-          chainName:'BNB Smart Chain',
-          rpcUrls:['https://bsc-rpc.publicnode.com'],
-          nativeCurrency:{name:'BNB',symbol:'BNB',decimals:18},
-          blockExplorerUrls:['https://bscscan.com']
-        }]});
-      }
+    // 先检测当前链
+    const chainId = await ethereum.request({method:'eth_chainId'}).catch(()=>'0x1');
+    if(chainId === '0x38') return; // 已经是BSC
+    // 尝试切换
+    await ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x38'}]}).catch(async()=>{
+      // 钱包没BSC网络，添加
+      await ethereum.request({method:'wallet_addEthereumChain',params:[BSC]});
+    });
+    // 再次确认
+    const newChain = await ethereum.request({method:'eth_chainId'}).catch(()=>'0x1');
+    if(newChain !== '0x38'){
+      alert('请在钱包中手动切换到 BNB Smart Chain (BSC)\n\nMetaMask: 左上角选择网络\nTrust Wallet: 设置→网络→BSC\nTokenPocket: 我的→网络管理→BSC');
     }
-  } catch(e){}
+  } catch(e){
+    alert('网络切换失败。请手动在钱包中切换到 BNB Smart Chain\n\n错误: '+(e.message||'').substring(0,50));
+  }
 }
 
 // 预计算的函数选择器 (keccak256 前4字节)
