@@ -102,6 +102,9 @@ select option { background: #1a1030; color: #fff; }
       <button class="btn" onclick="switchToBSC()" style="margin:10px 5px;">🔄 一键切换 BSC</button>
       <p style="color:#889;font-size:12px;">如果按钮无效，请在钱包App中手动切换网络</p>
     </div>
+    <div class="card" id="walletStatus" style="display:none;background:rgba(39,174,96,0.1);border-color:#27ae60;">
+      <span style="color:#27ae60;">✅ 已连接: </span><span id="walletAddr" style="font-family:monospace;"></span>
+    </div>
     <div class="card">
       <h3>🔒 质押 NOVA 赚收益</h3>
       <div class="stats">
