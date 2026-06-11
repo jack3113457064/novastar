@@ -151,7 +151,7 @@ select option { background: #1a1030; color: #fff; }
   </div>
 </div>
 
-<script src="ethers.min.js"></script>
+<script src="app.js?v=1"></script>
 <script>
 function switchTab(tab) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -160,114 +160,6 @@ function switchTab(tab) {
   event.target.classList.add('active');
   if (tab === 'dashboard') loadPrice();
   if (tab === 'stake') loadStakeInfo();
-}
-
-// ---- 价格 ----
-async function loadPrice() {
-  try {
-    const r = await fetch('https://api.dexscreener.com/latest/dex/tokens/0xA59bd1777e8eB5A20Ee51a6CF7C51aA31b6a18e5');
-    const d = await r.json();
-    if (d.pairs && d.pairs.length > 0) {
-      const p = d.pairs.sort((a,b)=>(b.liquidity?.usd||0)-(a.liquidity?.usd||0))[0];
-      const price = parseFloat(p.priceUsd);
-      document.getElementById('price').textContent = '$' + (price < 0.0001 ? price.toExponential(2) : price.toFixed(6));
-      document.getElementById('liquidity').textContent = '$' + Math.round(p.liquidity?.usd || 0);
-      document.getElementById('volume24').textContent = '$' + Math.round(p.volume?.h24 || 0);
-    }
-  } catch(e) { document.getElementById('price').textContent = '--'; }
-}
-
-// ---- 质押 ----
-const STAKE_ADDR = '0x1611f15529148AB0C302Eed557d3C1F6e9918F18';
-const NOVA_ADDR = '0xA59bd1777e8eB5A20Ee51a6CF7C51aA31b6a18e5';
-const STAKE_ABI = [
-  'function stake(uint256,uint256)',
-  'function claim(uint256)',
-  'function totalStaked() view returns (uint256)',
-  'function getUserStakes(address) view returns (tuple(uint256,uint256,uint256,bool)[])',
-  'function getUserStakeCount(address) view returns (uint256)',
-];
-const ERC20_ABI = [
-  'function approve(address,uint256) returns (bool)',
-  'function allowance(address,address) view returns (uint256)',
-  'function decimals() view returns (uint8)',
-];
-
-async function loadStakeInfo() {
-  try {
-    const provider = new ethers.JsonRpcProvider('https://bsc-rpc.publicnode.com');
-    const stake = new ethers.Contract(STAKE_ADDR, STAKE_ABI, provider);
-    const ts = await stake.totalStaked();
-    document.getElementById('totalStaked').textContent = (Number(ethers.formatEther(ts))/1e6).toFixed(1) + 'M';
-
-    if (window.ethereum) {
-      const acc = await ethereum.request({method:'eth_accounts'});
-      if (acc.length > 0) {
-        const count = await stake.getUserStakeCount(acc[0]);
-        const all = await stake.getUserStakes(acc[0]);
-        let html = '';
-        for (let i = 0; i < Number(count); i++) {
-          const s = all[i];
-          const unlock = new Date(Number(s[1])*1000);
-          const unlocked = Date.now()/1000 >= Number(s[1]);
-          const reward = Number(ethers.formatEther(s[0])) * Number(s[2]) / 10000;
-          html += '<div class="info-row" style="' + (unlocked ? 'background:rgba(39,174,96,0.1);' : '') + 'padding:8px;">';
-          html += '<span>' + Number(ethers.formatEther(s[0])).toLocaleString() + ' NOVA</span>';
-          html += '<span>' + (unlocked ? '✅ 可提取 (+' + reward.toLocaleString() + ')' : '🔒 ' + unlock.toLocaleDateString()) + '</span>';
-          if (unlocked && !s[3]) html += ' <button class="btn" style="padding:4px 12px;font-size:12px;" onclick="doClaim('+i+')">提取</button>';
-          html += '</div>';
-        }
-        document.getElementById('myStakes').innerHTML = html || '暂无质押';
-      }
-    }
-  } catch(e) { console.log(e); }
-}
-
-async function doStake() {
-  if (!window.ethereum) return alert('请安装 MetaMask');
-  try {
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    const signer = await provider.getSigner();
-    const amount = document.getElementById('stakeAmount').value;
-    const planSelect = document.getElementById('plan').value;
-    const planDays = parseInt(planSelect);
-    const planSec = planDays * 86400;
-    const amtWei = ethers.parseEther(amount);
-
-    // approve
-    const nova = new ethers.Contract(NOVA_ADDR, ERC20_ABI, signer);
-    const allow = await nova.allowance(await signer.getAddress(), STAKE_ADDR);
-    if (allow < amtWei) {
-      document.getElementById('stakeMsg').textContent = '🔓 授权中...';
-      const tx = await nova.approve(STAKE_ADDR, ethers.parseEther('999000000'));
-      await tx.wait();
-    }
-
-    document.getElementById('stakeMsg').textContent = '🔒 质押中...';
-    const stake = new ethers.Contract(STAKE_ADDR, STAKE_ABI, signer);
-    const tx = await stake.stake(amtWei, planSec);
-    await tx.wait();
-    document.getElementById('stakeMsg').textContent = '✅ 质押成功！';
-    loadStakeInfo();
-  } catch(e) {
-    document.getElementById('stakeMsg').textContent = '❌ ' + (e.message||e).substring(0,100);
-  }
-}
-
-async function doClaim(index) {
-  if (!window.ethereum) return;
-  try {
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    const signer = await provider.getSigner();
-    const stake = new ethers.Contract(STAKE_ADDR, STAKE_ABI, signer);
-    document.getElementById('claimMsg').textContent = '领取中...';
-    const tx = await stake.claim(index);
-    await tx.wait();
-    document.getElementById('claimMsg').textContent = '✅ 领取成功！';
-    loadStakeInfo();
-  } catch(e) {
-    document.getElementById('claimMsg').textContent = '❌ ' + (e.message||e).substring(0,100);
-  }
 }
 
 loadPrice();
