@@ -1,6 +1,29 @@
-// NovaStar DApp — 纯原生，零依赖，预计算选择器
+// NovaStar DApp — 纯原生，零依赖，自动切BSC网络
 const NOVA_ADDR = '0xA59bd1777e8eB5A20Ee51a6CF7C51aA31b6a18e5';
 const STAKE_ADDR = '0x1611f15529148AB0C302Eed557d3C1F6e9918F18';
+const BSC_CHAIN_ID = '0x38'; // 56
+
+// 自动切换 BSC 网络
+async function ensureBSC(){
+  if(!window.ethereum) return;
+  try {
+    const chainId = await ethereum.request({method:'eth_chainId'});
+    if(chainId !== BSC_CHAIN_ID){
+      try {
+        await ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:BSC_CHAIN_ID}]});
+      } catch(e){
+        // BSC 网络不存在，添加
+        await ethereum.request({method:'wallet_addEthereumChain',params:[{
+          chainId:BSC_CHAIN_ID,
+          chainName:'BNB Smart Chain',
+          rpcUrls:['https://bsc-rpc.publicnode.com'],
+          nativeCurrency:{name:'BNB',symbol:'BNB',decimals:18},
+          blockExplorerUrls:['https://bscscan.com']
+        }]});
+      }
+    }
+  } catch(e){}
+}
 
 // 预计算的函数选择器 (keccak256 前4字节)
 const SEL = {
@@ -59,6 +82,7 @@ async function loadStakeInfo(){
     document.getElementById('totalStaked').textContent = (Number(ts)/1e18/1e6).toFixed(1)+'M';
 
     if(window.ethereum){
+      await ensureBSC();
       const acc = (await ethereum.request({method:'eth_requestAccounts'}))[0];
       if(!acc) return;
       const count = Number(decodeUint(await rpc('eth_call',[{to:STAKE_ADDR,data:stakeCountData(acc)},'latest'])));
@@ -72,6 +96,7 @@ async function loadStakeInfo(){
 async function doStake(){
   if(!window.ethereum) return alert('请用钱包App内置浏览器打开！\n\nTrust Wallet → DApps → 输入官网地址');
   try {
+    await ensureBSC();
     const acc = (await ethereum.request({method:'eth_requestAccounts'}))[0];
     const amt = document.getElementById('stakeAmount').value;
     if(!amt || parseFloat(amt)<=0) return alert('请输入数量');
@@ -108,6 +133,7 @@ async function doStake(){
 async function doClaim(idx){
   if(!window.ethereum) return;
   try {
+    await ensureBSC();
     const acc = (await ethereum.request({method:'eth_requestAccounts'}))[0];
     document.getElementById('claimMsg').textContent = '领取中...';
     const hash = await ethereum.request({method:'eth_sendTransaction',params:[{
