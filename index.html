@@ -96,6 +96,11 @@ select option { background: #1a1030; color: #fff; }
 
   <!-- 质押 -->
   <div id="stake" class="tab-content">
+    <div id="netWarn" class="card" style="display:none;border-color:#f0ad4e;background:rgba(240,173,78,0.1);">
+      <h3 style="color:#f0ad4e;">⚠️ 网络错误：请切换到 BSC</h3>
+      <p style="color:#ddd;font-size:14px;">你当前不在 BNB Smart Chain 网络上</p>
+      <button class="btn" onclick="switchToBSC()" style="margin-top:8px;">🔄 一键切换到 BSC</button>
+    </div>
     <div class="card">
       <h3>🔒 质押 NOVA 赚收益</h3>
       <div class="stats">
