@@ -253,6 +253,86 @@ async function doStake(){
   }
 }
 
+// ====== 账户系统 ======
+async function connectAccount(){
+  if(!window.ethereum) return alert('请用钱包内置浏览器打开');
+  try {
+    const accs = await ethereum.request({method:'eth_requestAccounts'});
+    const user = accs[0];
+
+    // 显示信息
+    document.getElementById('acctLogin').style.display = 'none';
+    document.getElementById('acctInfo').style.display = 'block';
+    document.getElementById('acctStakeDetail').style.display = 'block';
+    document.getElementById('acctAddr').textContent = user;
+
+    // 读昵称
+    const nick = localStorage.getItem('nova_nick_'+user.toLowerCase());
+    if(nick) document.getElementById('acctName').textContent = nick;
+
+    // 读余额
+    const novaHex = await rpcCall('eth_call',[{to:NOVA,data:'0x70a08231'+addr(user)},'latest']);
+    const novaBal = Number(BigInt(novaHex))/1e18;
+    document.getElementById('acctNova').textContent = novaBal < 1000 ? novaBal.toFixed(2) : Math.round(novaBal).toLocaleString();
+
+    const bnbBal = Number(await ethereum.request({method:'eth_getBalance',params:[user,'latest']}))/1e18;
+    document.getElementById('acctBnb').textContent = bnbBal.toFixed(4);
+
+    // 读质押数量
+    try {
+      const countHex = await rpcCall('eth_call',[{to:STAKE,data:encStakeCount(user)},'latest']);
+      const count = Number(decUint256(countHex,0));
+      document.getElementById('acctStakes').textContent = count;
+
+      // 质押详情
+      if(count > 0){
+        const stakesHex = await rpcCall('eth_call',[{to:STAKE,data:encStakes(user)},'latest']);
+        const stakes = decodeStakes(stakesHex);
+        let html = '';
+        for(let i=0;i<stakes.length;i++){
+          const s = stakes[i];
+          const amt = Number(s.amount)/1e18;
+          const unlock = new Date(s.unlockTime*1000);
+          const rate = s.rewardRate/100;
+          const reward = amt*rate/100;
+          html += '<div class=info-row style=padding:8px;>'+
+            '<span>'+amt.toLocaleString()+' NOVA</span>'+
+            '<span>'+(s.claimed?'✅已提取':'🔒'+unlock.toLocaleDateString())+' | +'+reward.toLocaleString()+'</span>'+
+            '</div>';
+        }
+        document.getElementById('acctStakeList').innerHTML = html;
+      }
+    } catch(e){}
+
+    // 估值（粗略）
+    try {
+      const r = await fetch('https://api.dexscreener.com/latest/dex/tokens/'+NOVA);
+      const d = await r.json();
+      if(d.pairs?.length>0){
+        const price = parseFloat(d.pairs[0].priceUsd);
+        document.getElementById('acctValue').textContent = '$'+Math.round(novaBal*price);
+      }
+    } catch(e){ document.getElementById('acctValue').textContent = '--'; }
+
+  } catch(e){ alert('连接失败: '+(e.message||'').substring(0,50)); }
+}
+
+function editNickname(){
+  const name = prompt('输入你的昵称:', document.getElementById('acctName').textContent);
+  if(name){
+    document.getElementById('acctName').textContent = name;
+    const addr = document.getElementById('acctAddr').textContent;
+    localStorage.setItem('nova_nick_'+addr.toLowerCase(), name);
+  }
+}
+
+function copyInvite(){
+  const inp = document.getElementById('inviteLink');
+  inp.select(); navigator.clipboard.writeText(inp.value);
+  document.getElementById('copyMsg').textContent = '✅ 已复制！发给朋友即可';
+  setTimeout(()=>document.getElementById('copyMsg').textContent='', 2000);
+}
+
 // 页面切换
 function switchTab(tab){
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
@@ -260,6 +340,7 @@ function switchTab(tab){
   document.getElementById(tab).classList.add('active');
   event.target.classList.add('active');
   if(tab==='stake') loadStakeInfo();
+  if(tab==='account' && document.getElementById('acctInfo').style.display==='block') connectAccount();
 }
 
 // Init — 每小时刷新仪表盘
