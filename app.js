@@ -89,13 +89,20 @@ async function loadStakeInfo(){
     document.getElementById('totalStaked').textContent = (Number(ts)/1e18/1e6).toFixed(1)+'M';
 
     if(window.ethereum){
-      await ensureBSC();
-      const acc = (await ethereum.request({method:'eth_requestAccounts'}))[0];
+      await ensureBSC().catch(()=>{});
+      const acc = (await ethereum.request({method:'eth_requestAccounts'}).catch(()=>[]))[0];
       if(!acc) return;
       const count = Number(decodeUint(await rpc('eth_call',[{to:STAKE_ADDR,data:stakeCountData(acc)},'latest'])));
-      document.getElementById('myStakes').innerHTML = count > 0
-        ? '你有 <b>'+count+'</b> 笔质押。切换到钱包App操作提取。'
-        : '暂无质押记录';
+      if(count === 0) { document.getElementById('myStakes').innerHTML = '暂无质押'; return; }
+      let html = '';
+      for(let i=0;i<Math.min(count,10);i++){
+        html += '<div class="info-row" style="padding:10px;">'+
+          '<span>质押 #'+(i+1)+'</span>'+
+          '<button class="btn" style="padding:6px 18px;font-size:13px;" onclick="doClaim('+i+')">📤 提取</button>'+
+          '</div>';
+      }
+      document.getElementById('myStakes').innerHTML = html ||
+        '你有 <b>'+count+'</b> 笔质押。<br><small style="color:#888;">到期后点击提取按钮领取本息</small>';
     }
   } catch(e) { console.log(e); }
 }
