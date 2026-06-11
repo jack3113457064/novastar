@@ -24,6 +24,7 @@ const SIG = {
   stakeCount: '0x048d7753',       // getUserStakeCount(address)
   stake: '0x7b0472f0',           // stake(uint256,uint256)
   claim: '0x379607f5',           // claim(uint256)
+  balanceOf: '0x70a08231',       // balanceOf(address)
   approve: '0x095ea7b3',         // approve(address,uint256)
   allowance: '0xdd62ed3e',       // allowance(address,address)
   balanceOf: '0x70a08231',       // balanceOf(address)
@@ -97,8 +98,33 @@ async function loadPrice(){
       document.getElementById('price').textContent = price < 0.0001 ? '$'+price.toExponential(2) : '$'+price.toFixed(6);
       document.getElementById('liquidity').textContent = '$'+Math.round(p.liquidity?.usd||0);
       document.getElementById('volume24').textContent = '$'+Math.round(p.volume?.h24||0);
+      document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
     }
   } catch(e) {}
+}
+
+async function loadHolders(){
+  try {
+    // 已知持仓地址 + BscScan余额检查
+    const addrs = [
+      '0xe5DEDf734f8101442f9fCc50cB6988dC2CD85c90',
+      '0xc272333190C49cefa73017Fa58d392819D9E0Cc0',
+      '0xa7415a9a46ee69686C11bA28789489fC1949469a',
+      '0x89173268c43DAa73F82668bc98D57a509683277B',
+      '0x1611f15529148AB0C302Eed557d3C1F6e9918F18',
+      '0x000000000000000000000000000000000000dEaD',
+      '0x1111111111111111111111111111111111111111',
+      '0x2222222222222222222222222222222222222222',
+      '0x70a2B59fabcD58FfE83FA06A08Bc77Fac6498eE6',
+      '0x1F25E2665a5A29c798FfB3f0a9CEAA8aba294AE7',
+    ];
+    let count = 0;
+    for(let addr of addrs){
+      const hex = await rpcCall('eth_call',[{to:NOVA,data:SIG.balanceOf+addr(addr)},'latest']);
+      if(BigInt(hex) > 0n) count++;
+    }
+    document.getElementById('holders').textContent = count;
+  } catch(e){}
 }
 
 // ====== Staking ======
@@ -230,8 +256,10 @@ function switchTab(tab){
   if(tab==='stake') loadStakeInfo();
 }
 
-// Init
-loadPrice(); setInterval(loadPrice, 30000);
+// Init — 每小时刷新仪表盘
+loadPrice(); loadHolders();
+setInterval(loadPrice, 3600000); // 每小时
+setInterval(loadHolders, 3600000);
 if(window.ethereum){
   ethereum.on('chainChanged', ()=>setTimeout(loadStakeInfo,1000));
   setTimeout(loadStakeInfo, 500);
