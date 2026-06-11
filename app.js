@@ -1,71 +1,61 @@
-// NovaStar DApp — 纯原生，零依赖，自动切BSC网络
+// NovaStar DApp v4 — 完整质押详情+提取
 const NOVA_ADDR = '0xA59bd1777e8eB5A20Ee51a6CF7C51aA31b6a18e5';
 const STAKE_ADDR = '0x1611f15529148AB0C302Eed557d3C1F6e9918F18';
-const BSC_CHAIN_ID = '0x38'; // 56
+const RPC_URL = 'https://bsc-rpc.publicnode.com';
+const BSC_ID = '0x38';
 
-// 强制切换 BSC 网络（兼容手机钱包）
-async function ensureBSC(){
-  if(!window.ethereum) return alert('请用钱包内置浏览器打开此页面');
-  const BSC = {
-    chainId:'0x38',
-    chainName:'BNB Smart Chain',
-    rpcUrls:['https://bsc-rpc.publicnode.com','https://bsc-dataseed.binance.org/'],
-    nativeCurrency:{name:'BNB',symbol:'BNB',decimals:18},
-    blockExplorerUrls:['https://bscscan.com']
+let provider, signer, userAddr;
+let ethersReady = false;
+
+// 加载 ethers（国内CDN + 备用）
+function loadEthers(cb){
+  if(typeof ethers !== 'undefined'){ ethersReady=true; cb(); return; }
+  var s = document.createElement('script');
+  s.src = 'https://cdn.bootcdn.net/ajax/libs/ethers/6.13.0/ethers.umd.min.js';
+  s.onload = function(){ ethersReady=true; cb(); };
+  s.onerror = function(){
+    // 备用CDN
+    s.src = 'https://unpkg.com/ethers@6.13.0/dist/ethers.umd.min.js';
+    document.head.appendChild(s);
   };
+  document.head.appendChild(s);
+}
+
+// ====== 网络切换 ======
+async function switchToBSC(){
+  if(!window.ethereum) return alert('请用钱包内置浏览器打开');
   try {
-    // 先检测当前链
-    const chainId = await ethereum.request({method:'eth_chainId'}).catch(()=>'0x1');
-    if(chainId === '0x38') return; // 已经是BSC
-    // 尝试切换
-    await ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x38'}]}).catch(async()=>{
-      // 钱包没BSC网络，添加
-      await ethereum.request({method:'wallet_addEthereumChain',params:[BSC]});
+    await ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:BSC_ID}]}).catch(async()=>{
+      await ethereum.request({method:'wallet_addEthereumChain',params:[{
+        chainId:BSC_ID, chainName:'BNB Smart Chain',
+        rpcUrls:[RPC_URL,'https://bsc-dataseed.binance.org/'],
+        nativeCurrency:{name:'BNB',symbol:'BNB',decimals:18},
+        blockExplorerUrls:['https://bscscan.com']
+      }]});
     });
-    // 再次确认
-    const newChain = await ethereum.request({method:'eth_chainId'}).catch(()=>'0x1');
-    if(newChain !== '0x38'){
-      alert('请在钱包中手动切换到 BNB Smart Chain (BSC)\n\nMetaMask: 左上角选择网络\nTrust Wallet: 设置→网络→BSC\nTokenPocket: 我的→网络管理→BSC');
+    document.getElementById('netWarn').style.display = 'none';
+    initWallet();
+  } catch(e){ alert('请手动在钱包切换到 BSC 网络'); }
+}
+
+// ====== 钱包初始化 ======
+async function initWallet(){
+  if(!ethersReady || !window.ethereum) return;
+  try {
+    provider = new ethers.BrowserProvider(window.ethereum);
+    const chainId = await ethereum.request({method:'eth_chainId'});
+    if(chainId !== BSC_ID){
+      document.getElementById('netWarn').style.display = 'block';
+      return;
     }
-  } catch(e){
-    alert('网络切换失败。请手动在钱包中切换到 BNB Smart Chain\n\n错误: '+(e.message||'').substring(0,50));
-  }
+    document.getElementById('netWarn').style.display = 'none';
+    signer = await provider.getSigner();
+    userAddr = await signer.getAddress();
+    document.getElementById('walletAddr').textContent = userAddr.substring(0,8)+'...'+userAddr.substring(38);
+    document.getElementById('walletStatus').style.display = 'block';
+    loadStakeInfo();
+  } catch(e){ console.log(e); }
 }
-
-// 预计算的函数选择器 (keccak256 前4字节)
-const SEL = {
-  totalStaked: '0x817b1cd2',
-  getUserStakeCount: '0x048d7753',
-  stake: '0x7b0472f0',
-  claim: '0x379607f5',
-  approve: '0x095ea7b3',
-  allowance: '0xdd62ed3e',
-};
-
-// ABI 编码工具
-function pad64(hex){ return hex.toLowerCase().replace('0x','').padStart(64,'0'); }
-function addr(a){ return pad64(a); }
-function uint256(n){ return BigInt(n).toString(16).padStart(64,'0'); }
-
-// 构造 eth_call / eth_sendTransaction 的 data
-// stake(uint256,uint256) → SEL.stake + uint256(amount) + uint256(planSeconds)
-function stakeData(amount, planSec){ return SEL.stake + uint256(amount) + uint256(planSec); }
-function claimData(idx){ return SEL.claim + uint256(idx); }
-function approveData(spender, amount){ return SEL.approve + addr(spender) + uint256(amount); }
-function allowanceData(owner, spender){ return SEL.allowance + addr(owner) + addr(spender); }
-function stakeCountData(user){ return SEL.getUserStakeCount + addr(user); }
-
-// RPC 调用
-async function rpc(method, params){
-  const r = await fetch('https://bsc-rpc.publicnode.com', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({jsonrpc:'2.0',id:1,method,params})
-  });
-  const j = await r.json();
-  if(j.error) throw new Error(j.error.message);
-  return j.result;
-}
-function decodeUint(hex){ try { return BigInt(hex); } catch(e){ return 0n; } }
 
 // ====== Dashboard ======
 async function loadPrice(){
@@ -79,115 +69,120 @@ async function loadPrice(){
       document.getElementById('liquidity').textContent = '$'+Math.round(p.liquidity?.usd||0);
       document.getElementById('volume24').textContent = '$'+Math.round(p.volume?.h24||0);
     }
-  } catch(e) { console.log('Price load error'); }
+  } catch(e) {}
 }
 
 // ====== Staking ======
 async function loadStakeInfo(){
+  if(!signer) return;
   try {
-    const ts = decodeUint(await rpc('eth_call',[{to:STAKE_ADDR,data:SEL.totalStaked},'latest']));
-    document.getElementById('totalStaked').textContent = (Number(ts)/1e18/1e6).toFixed(1)+'M';
+    const rpc = new ethers.JsonRpcProvider(RPC_URL);
+    const stake = new ethers.Contract(STAKE_ADDR, [
+      'function totalStaked() view returns (uint256)',
+      'function getUserStakeCount(address) view returns (uint256)',
+      'function getUserStakes(address) view returns (tuple(uint256,uint256,uint256,bool)[])',
+    ], rpc);
 
-    if(window.ethereum){
-      await ensureBSC().catch(()=>{});
-      const acc = (await ethereum.request({method:'eth_requestAccounts'}).catch(()=>[]))[0];
-      if(!acc) return;
-      const count = Number(decodeUint(await rpc('eth_call',[{to:STAKE_ADDR,data:stakeCountData(acc)},'latest'])));
-      if(count === 0) { document.getElementById('myStakes').innerHTML = '暂无质押'; return; }
-      let html = '';
-      for(let i=0;i<Math.min(count,10);i++){
-        html += '<div class="info-row" style="padding:10px;">'+
-          '<span>质押 #'+(i+1)+'</span>'+
-          '<button class="btn" style="padding:6px 18px;font-size:13px;" onclick="doClaim('+i+')">📤 提取</button>'+
-          '</div>';
+    const ts = await stake.totalStaked();
+    document.getElementById('totalStaked').textContent = (Number(ethers.formatEther(ts))/1e6).toFixed(1)+'M';
+
+    const count = Number(await stake.getUserStakeCount(userAddr));
+    if(count === 0){ document.getElementById('myStakes').innerHTML = '<p style=color:#889>暂无质押记录</p>'; return; }
+
+    const all = await stake.getUserStakes(userAddr);
+    let html = '';
+    for(let i=0;i<count;i++){
+      const s = all[i];
+      const amount = Number(ethers.formatEther(s[0]));
+      const unlock = new Date(Number(s[1])*1000);
+      const rewardRate = Number(s[2])/100;
+      const reward = amount * rewardRate / 100;
+      const now = Date.now()/1000;
+      const unlocked = now >= Number(s[1]);
+      const claimed = s[3];
+
+      html += '<div class="info-row" style="padding:12px;'+(unlocked&&!claimed?'background:rgba(39,174,96,0.1);border-radius:8px;':'')+'">';
+      html += '<div><b>'+amount.toLocaleString()+' NOVA</b><br><small style=color:#889>到期: '+unlock.toLocaleDateString()+' | 收益: '+rewardRate.toFixed(1)+'% (+'+reward.toLocaleString()+' NOVA)</small></div>';
+      if(claimed){
+        html += '<span style=color:#27ae60>✅ 已提取</span>';
+      } else if(unlocked){
+        html += '<button class=btn style=\"padding:8px 18px;font-size:14px\" onclick=\"doClaim('+i+')\">📤 提取 '+(amount+reward).toLocaleString()+' NOVA</button>';
+      } else {
+        const days = Math.ceil((Number(s[1])-now)/86400);
+        html += '<span style=color:#f0ad4e>🔒 '+days+'天后解锁</span>';
       }
-      document.getElementById('myStakes').innerHTML = html ||
-        '你有 <b>'+count+'</b> 笔质押。<br><small style="color:#888;">到期后点击提取按钮领取本息</small>';
+      html += '</div>';
     }
-  } catch(e) { console.log(e); }
+    document.getElementById('myStakes').innerHTML = html;
+  } catch(e){ console.log(e); }
 }
 
 async function doStake(){
-  if(!window.ethereum) return alert('请用钱包App内置浏览器打开！\n\nTrust Wallet → DApps → 输入官网地址');
+  if(!signer) return alert('请先连接钱包');
   try {
-    await ensureBSC();
-    const acc = (await ethereum.request({method:'eth_requestAccounts'}))[0];
     const amt = document.getElementById('stakeAmount').value;
-    if(!amt || parseFloat(amt)<=0) return alert('请输入数量');
+    if(!amt||parseFloat(amt)<=0) return alert('请输入数量');
     const planDay = parseInt(document.getElementById('plan').value);
-    const amtWei = BigInt(Math.floor(parseFloat(amt)*1e18));
-    const planSec = planDay * 86400;
+
+    const nova = new ethers.Contract(NOVA_ADDR, [
+      'function approve(address,uint256) returns (bool)',
+      'function allowance(address,address) view returns (uint256)',
+    ], signer);
+
+    const stake = new ethers.Contract(STAKE_ADDR, [
+      'function stake(uint256,uint256)',
+    ], signer);
+
+    const amtWei = ethers.parseEther(amt);
 
     // 检查授权
-    const allowHex = await rpc('eth_call',[{to:NOVA_ADDR,data:allowanceData(acc,STAKE_ADDR)},'latest']);
-    if(decodeUint(allowHex) < amtWei){
+    const allow = await nova.allowance(userAddr, STAKE_ADDR);
+    if(allow < amtWei){
       document.getElementById('stakeMsg').textContent = '🔓 请在钱包确认授权...';
-      await ethereum.request({method:'eth_sendTransaction',params:[{
-        from:acc, to:NOVA_ADDR,
-        data: approveData(STAKE_ADDR, '999000000'+'0'.repeat(18)),
-        gas: '0x186A0'
-      }]});
-      document.getElementById('stakeMsg').textContent = '✅ 已授权，正在质押...';
+      const tx = await nova.approve(STAKE_ADDR, ethers.parseEther('999000000'));
+      await tx.wait();
     }
 
     document.getElementById('stakeMsg').textContent = '🔒 请在钱包确认质押...';
-    const hash = await ethereum.request({method:'eth_sendTransaction',params:[{
-      from:acc, to:STAKE_ADDR,
-      data: stakeData(amtWei.toString(), planSec.toString()),
-      gas: '0x2DC6C0'
-    }]});
-    document.getElementById('stakeMsg').innerHTML = '✅ 质押成功！<br><small>TX: '+hash.substring(0,24)+'...</small>';
-    setTimeout(loadStakeInfo, 5000);
-  } catch(e) {
-    if(e.code === 4001) document.getElementById('stakeMsg').textContent = '❌ 你取消了交易';
-    else document.getElementById('stakeMsg').textContent = '❌ '+(e.message||'').substring(0,80);
+    const tx = await stake.stake(amtWei, planDay*86400);
+    await tx.wait();
+    document.getElementById('stakeMsg').innerHTML = '✅ 质押成功！';
+    loadStakeInfo();
+  } catch(e){
+    if(e.code===4001) document.getElementById('stakeMsg').textContent = '❌ 取消了交易';
+    else document.getElementById('stakeMsg').textContent = '❌ '+(e.shortMessage||e.message||'').substring(0,60);
   }
 }
 
 async function doClaim(idx){
-  if(!window.ethereum) return;
+  if(!signer) return;
   try {
-    await ensureBSC();
-    const acc = (await ethereum.request({method:'eth_requestAccounts'}))[0];
     document.getElementById('claimMsg').textContent = '领取中...';
-    const hash = await ethereum.request({method:'eth_sendTransaction',params:[{
-      from:acc, to:STAKE_ADDR,
-      data: claimData(idx),
-      gas: '0x2DC6C0'
-    }]});
-    document.getElementById('claimMsg').innerHTML = '✅ TX: '+hash.substring(0,24)+'...';
-    setTimeout(loadStakeInfo, 5000);
-  } catch(e) {
-    if(e.code === 4001) document.getElementById('claimMsg').textContent = '❌ 你取消了交易';
-    else document.getElementById('claimMsg').textContent = '❌ '+(e.message||'').substring(0,80);
-  }
-}
-
-// 公开的切换BSC函数
-async function switchToBSC(){
-  try {
-    await ensureBSC();
-    document.getElementById('netWarn').style.display = 'none';
-    alert('✅ 已切换到 BSC 网络！');
+    const stake = new ethers.Contract(STAKE_ADDR, ['function claim(uint256)'], signer);
+    const tx = await stake.claim(idx);
+    await tx.wait();
+    document.getElementById('claimMsg').innerHTML = '✅ 领取成功！';
+    loadStakeInfo();
   } catch(e){
-    alert('切换失败，请手动在钱包中切换到 BNB Smart Chain');
+    if(e.code===4001) document.getElementById('claimMsg').textContent = '❌ 取消了交易';
+    else document.getElementById('claimMsg').textContent = '❌ '+(e.shortMessage||e.message||'').substring(0,60);
   }
 }
 
-// Init — 页面加载即检查网络
+// 页面切换
+function switchTab(tab){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
+  event.target.classList.add('active');
+  if(tab==='dashboard') loadPrice();
+  if(tab==='stake' && ethersReady) { initWallet(); loadStakeInfo(); }
+}
+
+// Init
 loadPrice(); setInterval(loadPrice, 30000);
-(async function initNetwork(){
-  if(window.ethereum){
-    // 监听网络切换
-    ethereum.on('chainChanged', () => location.reload());
-    // 延迟检查
-    setTimeout(async ()=>{
-      try {
-        const chainId = await ethereum.request({method:'eth_chainId'});
-        if(chainId !== BSC_CHAIN_ID){
-          document.getElementById('netWarn').style.display = 'block';
-        }
-      } catch(e){}
-    }, 500);
-  }
-})();
+loadEthers(function(){
+  if(window.ethereum){ initWallet(); }
+  // 网络切换监听
+  if(window.ethereum) ethereum.on('chainChanged', ()=>location.reload());
+});
