@@ -149,5 +149,31 @@ async function doClaim(idx){
   }
 }
 
-// Init
+// 公开的切换BSC函数
+async function switchToBSC(){
+  try {
+    await ensureBSC();
+    document.getElementById('netWarn').style.display = 'none';
+    alert('✅ 已切换到 BSC 网络！');
+  } catch(e){
+    alert('切换失败，请手动在钱包中切换到 BNB Smart Chain');
+  }
+}
+
+// Init — 页面加载即检查网络
 loadPrice(); setInterval(loadPrice, 30000);
+(async function initNetwork(){
+  if(window.ethereum){
+    // 监听网络切换
+    ethereum.on('chainChanged', () => location.reload());
+    // 延迟检查
+    setTimeout(async ()=>{
+      try {
+        const chainId = await ethereum.request({method:'eth_chainId'});
+        if(chainId !== BSC_CHAIN_ID){
+          document.getElementById('netWarn').style.display = 'block';
+        }
+      } catch(e){}
+    }, 500);
+  }
+})();
