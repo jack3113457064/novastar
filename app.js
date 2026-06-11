@@ -105,25 +105,31 @@ async function loadPrice(){
 
 async function loadHolders(){
   try {
-    // 已知持仓地址 + BscScan余额检查
-    const addrs = [
-      '0xe5DEDf734f8101442f9fCc50cB6988dC2CD85c90',
-      '0xc272333190C49cefa73017Fa58d392819D9E0Cc0',
-      '0xa7415a9a46ee69686C11bA28789489fC1949469a',
-      '0x89173268c43DAa73F82668bc98D57a509683277B',
-      '0x1611f15529148AB0C302Eed557d3C1F6e9918F18',
-      '0x000000000000000000000000000000000000dEaD',
-      '0x1111111111111111111111111111111111111111',
-      '0x2222222222222222222222222222222222222222',
-      '0x70a2B59fabcD58FfE83FA06A08Bc77Fac6498eE6',
-      '0x1F25E2665a5A29c798FfB3f0a9CEAA8aba294AE7',
-    ];
-    let count = 0;
-    for(let addr of addrs){
-      const hex = await rpcCall('eth_call',[{to:NOVA,data:SIG.balanceOf+addr(addr)},'latest']);
-      if(BigInt(hex) > 0n) count++;
+    // 从 BscScan API 查所有持有者（浏览器端可访问）
+    const url = 'https://api.bscscan.com/api?module=token&action=tokenholderlist&contractaddress='+NOVA+'&page=1&offset=100&apikey=M6D8UT9URTKP2W6QUVMWWQZTKZ2Q1IPEPP';
+    const r = await fetch(url);
+    const d = await r.json();
+    if(d.status==='1' && d.result){
+      document.getElementById('holders').textContent = d.result.length;
+    } else {
+      // 备用：检查已知地址
+      const addrs = [
+        '0xe5DEDf734f8101442f9fCc50cB6988dC2CD85c90',
+        '0xc272333190C49cefa73017Fa58d392819D9E0Cc0',
+        '0xa7415a9a46ee69686C11bA28789489fC1949469a',
+        '0x89173268c43DAa73F82668bc98D57a509683277B',
+        '0x1611f15529148AB0C302Eed557d3C1F6e9918F18',
+        '0x000000000000000000000000000000000000dEaD',
+        '0x70a2B59fabcD58FfE83FA06A08Bc77Fac6498eE6',
+        '0x1F25E2665a5A29c798FfB3f0a9CEAA8aba294AE7',
+      ];
+      let count = 0;
+      for(let addr of addrs){
+        const hex = await rpcCall('eth_call',[{to:NOVA,data:'0x70a08231'+addr(addr)},'latest']);
+        if(BigInt(hex) > 0n) count++;
+      }
+      document.getElementById('holders').textContent = count;
     }
-    document.getElementById('holders').textContent = count;
   } catch(e){}
 }
 
