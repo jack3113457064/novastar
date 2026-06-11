@@ -3,98 +3,261 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NovaStar (NOVA) — Decentralized Community Token</title>
-<meta name="description" content="NovaStar (NOVA) is a fully decentralized community token on BNB Smart Chain. Ownership renounced, LP locked, community driven.">
+<title>NovaStar (NOVA) Dashboard</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #0a0a1a 0%, #1a1030 50%, #0d1b2a 100%); color: #fff; min-height: 100vh; }
-.container { max-width: 700px; margin: 0 auto; padding: 40px 20px; text-align: center; }
-.logo { width: 120px; height: 120px; margin: 20px auto; border-radius: 50%; box-shadow: 0 0 40px rgba(233,69,96,0.4); }
-h1 { font-size: 48px; background: linear-gradient(135deg, #e94560, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 10px 0; }
-.tagline { font-size: 18px; color: #aab; margin-bottom: 30px; }
-.card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 24px; margin: 16px 0; text-align: left; }
-.card h3 { color: #e94560; margin-bottom: 12px; }
-.badge { display: inline-block; background: rgba(39,174,96,0.2); color: #27ae60; border: 1px solid #27ae60; padding: 4px 12px; border-radius: 20px; font-size: 13px; margin: 4px; }
-.info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-.info-row span:first-child { color: #99a; }
-.info-row span:last-child { color: #fff; font-family: monospace; font-size: 13px; }
-.btn { display: inline-block; background: linear-gradient(135deg, #e94560, #ff6b6b); color: white; padding: 14px 32px; border-radius: 30px; text-decoration: none; font-weight: bold; margin: 8px; transition: transform 0.2s; }
-.btn:hover { transform: scale(1.05); }
+body { font-family: -apple-system, sans-serif; background: linear-gradient(135deg, #0a0a1a, #1a1030, #0d1b2a); color: #fff; min-height: 100vh; }
+.container { max-width: 800px; margin: 0 auto; padding: 20px; }
+header { text-align: center; padding: 30px 0; }
+.logo { width: 80px; height: 80px; border-radius: 50%; box-shadow: 0 0 30px rgba(233,69,96,0.5); }
+h1 { font-size: 36px; background: linear-gradient(135deg, #e94560, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.nav { display: flex; gap: 10px; justify-content: center; margin: 15px 0; }
+.nav button { background: rgba(255,255,255,0.05); color: #aab; border: 1px solid rgba(255,255,255,0.1); padding: 10px 24px; border-radius: 12px; cursor: pointer; font-size: 15px; }
+.nav button.active { background: #e94560; color: #fff; border-color: #e94560; }
+.card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px; margin: 16px 0; }
+.card h3 { color: #e94560; margin-bottom: 16px; font-size: 18px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.stat { text-align: center; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px; }
+.stat .val { font-size: 24px; font-weight: bold; color: #fff; }
+.stat .label { font-size: 12px; color: #778; margin-top: 4px; }
+.price-up { color: #27ae60 !important; }
+.price-down { color: #e94560 !important; }
+a { color: #e94560; text-decoration: none; }
+.btn { display: inline-block; background: linear-gradient(135deg, #e94560, #ff6b6b); color: #fff; padding: 12px 28px; border-radius: 10px; font-weight: bold; margin: 4px; cursor: pointer; border: none; font-size: 15px; }
 .btn-outline { background: transparent; border: 2px solid #e94560; }
-.footer { color: #556; font-size: 13px; margin-top: 40px; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+input, select { width: 100%; padding: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #fff; font-size: 16px; margin: 8px 0; }
+input:focus, select:focus { outline: none; border-color: #e94560; }
+select option { background: #1a1030; color: #fff; }
+.badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 12px; margin: 3px; }
+.badge-green { background: rgba(39,174,96,0.2); color: #27ae60; border: 1px solid #27ae60; }
+.info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 14px; }
+.info-row span:first-child { color: #778; }
+.mono { font-family: monospace; font-size: 12px; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
 </style>
 </head>
 <body>
 <div class="container">
-  <img src="logo.png" alt="NovaStar Logo" class="logo">
-  <h1>NovaStar</h1>
-  <p class="tagline">$NOVA — Fully Decentralized. Community Driven. Forever Free.</p>
+  <header>
+    <img src="logo.png" alt="NOVA" class="logo">
+    <h1>NovaStar Dashboard</h1>
+    <p style="color:#889;">$NOVA — Decentralized. Trustless. Forever Free.</p>
+  </header>
 
-  <div style="margin:20px 0;">
-    <a href="https://pancakeswap.finance/swap?outputCurrency=0xA59bd1777e8eB5A20Ee51a6CF7C51aA31b6a18e5&use=V2" class="btn" target="_blank">🛒 Buy on PancakeSwap</a>
-    <a href="https://dexscreener.com/bsc/0xa7415a9a46ee69686C11bA28789489fC1949469a" class="btn btn-outline" target="_blank">📈 Live Chart</a>
+  <div class="nav">
+    <button class="active" onclick="switchTab('dashboard')">📊 仪表盘</button>
+    <button onclick="switchTab('stake')">🔒 质押</button>
   </div>
 
-  <div class="card">
-    <h3>🔒 Security</h3>
-    <div>
-      <span class="badge">✅ Ownership Renounced</span>
-      <span class="badge">🔒 LP Locked 180 Days</span>
-      <span class="badge">🔒 50% Supply Locked</span>
-      <span class="badge">✅ Sourcify Verified</span>
-      <span class="badge">✅ OpenZeppelin Audited</span>
+  <!-- 仪表盘 -->
+  <div id="dashboard" class="tab-content active">
+    <div class="card">
+      <h3>💰 实时价格</h3>
+      <div class="stats">
+        <div class="stat"><div class="val" id="price">--</div><div class="label">USDT/NOVA</div></div>
+        <div class="stat"><div class="val" id="liquidity">--</div><div class="label">总流动性</div></div>
+        <div class="stat"><div class="val" id="volume24">--</div><div class="label">24h交易量</div></div>
+        <div class="stat"><div class="val" id="holders">8</div><div class="label">持有者</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🔒 安全认证</h3>
+      <div id="badges">
+        <span class="badge badge-green">✅ 所有权已放弃</span>
+        <span class="badge badge-green">🔒 LP 锁仓</span>
+        <span class="badge badge-green">🔒 50% 锁仓</span>
+        <span class="badge badge-green">✅ 源码验证</span>
+        <span class="badge badge-green">✅ 双池子</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🛒 立即购买</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <a href="https://pancakeswap.finance/swap?inputCurrency=0x55d398326f99059fF775485246999027B3197955&outputCurrency=0xA59bd1777e8eB5A20Ee51a6CF7C51aA31b6a18e5&use=V2" target="_blank" class="btn">💵 USDT 购买</a>
+        <a href="https://pancakeswap.finance/swap?outputCurrency=0xA59bd1777e8eB5A20Ee51a6CF7C51aA31b6a18e5&use=V2" target="_blank" class="btn btn-outline">💎 BNB 购买</a>
+        <a href="https://dexscreener.com/bsc/0xa7415a9a46ee69686C11bA28789489fC1949469a" target="_blank" class="btn btn-outline">📈 K线</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📋 合约信息</h3>
+      <div class="info-row"><span>代币符号</span><span>NOVA</span></div>
+      <div class="info-row"><span>链</span><span>BNB Smart Chain (BSC)</span></div>
+      <div class="info-row"><span>总供应</span><span>1,000,000,000 NOVA</span></div>
+      <div class="info-row"><span>合约地址</span><span class="mono">0xA59bd17...1a6a18e5</span></div>
+      <div class="info-row"><span>BscScan</span><span><a href="https://bscscan.com/address/0xA59bd1777e8eB5A20Ee51a6CF7C51aA31b6a18e5" target="_blank">查看</a></span></div>
+      <div class="info-row"><span>Twitter</span><span><a href="https://x.com/Jacknmg" target="_blank">@Jacknmg</a></span></div>
     </div>
   </div>
 
-  <div class="card">
-    <h3>📊 Token Info</h3>
-    <div class="info-row"><span>Name</span><span>NovaStar</span></div>
-    <div class="info-row"><span>Symbol</span><span>NOVA</span></div>
-    <div class="info-row"><span>Chain</span><span>BNB Smart Chain (BSC)</span></div>
-    <div class="info-row"><span>Total Supply</span><span>1,000,000,000 NOVA</span></div>
-    <div class="info-row"><span>Contract</span><span style="font-size:11px;">0xA59bd17...1a6a18e5</span></div>
-    <div class="info-row"><span>LP Locked</span><span>Until 2026-12-07</span></div>
-    <div class="info-row"><span>Owner</span><span>0x0000...0000 (Renounced)</span></div>
-  </div>
+  <!-- 质押 -->
+  <div id="stake" class="tab-content">
+    <div class="card">
+      <h3>🔒 质押 NOVA 赚收益</h3>
+      <div class="stats">
+        <div class="stat"><div class="val">3%</div><div class="label">30天收益</div></div>
+        <div class="stat"><div class="val">8%</div><div class="label">60天收益</div></div>
+        <div class="stat"><div class="val">15%</div><div class="label">90天收益</div></div>
+        <div class="stat"><div class="val" id="totalStaked">--</div><div class="label">总质押量</div></div>
+      </div>
+      <p style="color:#889;font-size:13px;margin-top:8px;">质押合约: <a href="https://bscscan.com/address/0x1611f15529148AB0C302Eed557d3C1F6e9918F18" target="_blank" class="mono">0x1611f155...18</a></p>
+    </div>
 
-  <div class="card">
-    <h3>🔗 Links</h3>
-    <div class="info-row">
-      <span>BscScan</span>
-      <span><a href="https://bscscan.com/address/0xA59bd1777e8eB5A20Ee51a6CF7C51aA31b6a18e5" target="_blank" style="color:#e94560;">View Contract</a></span>
+    <div class="card">
+      <h3>📥 质押</h3>
+      <select id="plan">
+        <option value="30">30 天 — 3% 收益</option>
+        <option value="60">60 天 — 8% 收益</option>
+        <option value="90">90 天 — 15% 收益</option>
+      </select>
+      <input type="number" id="stakeAmount" placeholder="输入 NOVA 数量">
+      <button class="btn" id="btnStake" onclick="doStake()">🔒 质押</button>
+      <p id="stakeMsg" style="margin-top:8px;font-size:14px;"></p>
     </div>
-    <div class="info-row">
-      <span>Twitter/X</span>
-      <span><a href="https://x.com/Jacknmg" target="_blank" style="color:#e94560;">@Jacknmg</a></span>
+
+    <div class="card">
+      <h3>📤 已到期可提取</h3>
+      <div id="myStakes" style="font-size:13px;color:#889;">连接钱包查看你的质押</div>
+      <p id="claimMsg" style="margin-top:8px;font-size:14px;"></p>
     </div>
-    <div class="info-row">
-      <span>PancakeSwap</span>
-      <span><a href="https://pancakeswap.finance/swap?outputCurrency=0xA59bd1777e8eB5A20Ee51a6CF7C51aA31b6a18e5&use=V2" target="_blank" style="color:#e94560;">Trade NOVA</a></span>
-    </div>
-    <div class="info-row">
-      <span>DexScreener</span>
-      <span><a href="https://dexscreener.com/bsc/0xa7415a9a46ee69686C11bA28789489fC1949469a" target="_blank" style="color:#e94560;">Live Chart</a></span>
-    </div>
-    <div class="info-row">
-      <span>Sourcify</span>
-      <span><a href="https://repo.sourcify.dev/contracts/full_match/56/0xA59bd1777e8eB5A20Ee51a6CF7C51aA31b6a18e5/" target="_blank" style="color:#e94560;">Verified Source</a></span>
+
+    <div class="card">
+      <h3>💡 说明</h3>
+      <p style="color:#889;font-size:13px;line-height:1.8;">
+        • 质押 NOVA 获得固定收益<br>
+        • 到期前不可取出<br>
+        • 本金+收益到期后一次性领取<br>
+        • 奖励池 100 万 NOVA，先到先得
+      </p>
     </div>
   </div>
-
-  <div class="card">
-    <h3>📖 About NovaStar</h3>
-    <p style="color:#aab; line-height:1.8;">
-      NovaStar (NOVA) is a fully decentralized community token on BNB Smart Chain.
-      The contract ownership has been permanently renounced — no one can pause, freeze, or control it.
-      LP liquidity is locked for 6 months, and 50% of the total supply is locked in a transparent vesting contract.
-      Powered by OpenZeppelin's audited code. Driven entirely by the community.
-    </p>
-  </div>
-
-  <p class="footer">
-    © 2026 NovaStar. No team. No control. Just the community.<br>
-    Contract: 0xA59bd1777e8eB5A20Ee51a6CF7C51aA31b6a18e5
-  </p>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.min.js"></script>
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
+  event.target.classList.add('active');
+  if (tab === 'dashboard') loadPrice();
+  if (tab === 'stake') loadStakeInfo();
+}
+
+// ---- 价格 ----
+async function loadPrice() {
+  try {
+    const r = await fetch('https://api.dexscreener.com/latest/dex/tokens/0xA59bd1777e8eB5A20Ee51a6CF7C51aA31b6a18e5');
+    const d = await r.json();
+    if (d.pairs && d.pairs.length > 0) {
+      const p = d.pairs.sort((a,b)=>(b.liquidity?.usd||0)-(a.liquidity?.usd||0))[0];
+      const price = parseFloat(p.priceUsd);
+      document.getElementById('price').textContent = '$' + (price < 0.0001 ? price.toExponential(2) : price.toFixed(6));
+      document.getElementById('liquidity').textContent = '$' + Math.round(p.liquidity?.usd || 0);
+      document.getElementById('volume24').textContent = '$' + Math.round(p.volume?.h24 || 0);
+    }
+  } catch(e) { document.getElementById('price').textContent = '--'; }
+}
+
+// ---- 质押 ----
+const STAKE_ADDR = '0x1611f15529148AB0C302Eed557d3C1F6e9918F18';
+const NOVA_ADDR = '0xA59bd1777e8eB5A20Ee51a6CF7C51aA31b6a18e5';
+const STAKE_ABI = [
+  'function stake(uint256,uint256)',
+  'function claim(uint256)',
+  'function totalStaked() view returns (uint256)',
+  'function getUserStakes(address) view returns (tuple(uint256,uint256,uint256,bool)[])',
+  'function getUserStakeCount(address) view returns (uint256)',
+];
+const ERC20_ABI = [
+  'function approve(address,uint256) returns (bool)',
+  'function allowance(address,address) view returns (uint256)',
+  'function decimals() view returns (uint8)',
+];
+
+async function loadStakeInfo() {
+  try {
+    const provider = new ethers.JsonRpcProvider('https://bsc-rpc.publicnode.com');
+    const stake = new ethers.Contract(STAKE_ADDR, STAKE_ABI, provider);
+    const ts = await stake.totalStaked();
+    document.getElementById('totalStaked').textContent = (Number(ethers.formatEther(ts))/1e6).toFixed(1) + 'M';
+
+    if (window.ethereum) {
+      const acc = await ethereum.request({method:'eth_accounts'});
+      if (acc.length > 0) {
+        const count = await stake.getUserStakeCount(acc[0]);
+        const all = await stake.getUserStakes(acc[0]);
+        let html = '';
+        for (let i = 0; i < Number(count); i++) {
+          const s = all[i];
+          const unlock = new Date(Number(s[1])*1000);
+          const unlocked = Date.now()/1000 >= Number(s[1]);
+          const reward = Number(ethers.formatEther(s[0])) * Number(s[2]) / 10000;
+          html += '<div class="info-row" style="' + (unlocked ? 'background:rgba(39,174,96,0.1);' : '') + 'padding:8px;">';
+          html += '<span>' + Number(ethers.formatEther(s[0])).toLocaleString() + ' NOVA</span>';
+          html += '<span>' + (unlocked ? '✅ 可提取 (+' + reward.toLocaleString() + ')' : '🔒 ' + unlock.toLocaleDateString()) + '</span>';
+          if (unlocked && !s[3]) html += ' <button class="btn" style="padding:4px 12px;font-size:12px;" onclick="doClaim('+i+')">提取</button>';
+          html += '</div>';
+        }
+        document.getElementById('myStakes').innerHTML = html || '暂无质押';
+      }
+    }
+  } catch(e) { console.log(e); }
+}
+
+async function doStake() {
+  if (!window.ethereum) return alert('请安装 MetaMask');
+  try {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const amount = document.getElementById('stakeAmount').value;
+    const planSelect = document.getElementById('plan').value;
+    const planDays = parseInt(planSelect);
+    const planSec = planDays * 86400;
+    const amtWei = ethers.parseEther(amount);
+
+    // approve
+    const nova = new ethers.Contract(NOVA_ADDR, ERC20_ABI, signer);
+    const allow = await nova.allowance(await signer.getAddress(), STAKE_ADDR);
+    if (allow < amtWei) {
+      document.getElementById('stakeMsg').textContent = '🔓 授权中...';
+      const tx = await nova.approve(STAKE_ADDR, ethers.parseEther('999000000'));
+      await tx.wait();
+    }
+
+    document.getElementById('stakeMsg').textContent = '🔒 质押中...';
+    const stake = new ethers.Contract(STAKE_ADDR, STAKE_ABI, signer);
+    const tx = await stake.stake(amtWei, planSec);
+    await tx.wait();
+    document.getElementById('stakeMsg').textContent = '✅ 质押成功！';
+    loadStakeInfo();
+  } catch(e) {
+    document.getElementById('stakeMsg').textContent = '❌ ' + (e.message||e).substring(0,100);
+  }
+}
+
+async function doClaim(index) {
+  if (!window.ethereum) return;
+  try {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const stake = new ethers.Contract(STAKE_ADDR, STAKE_ABI, signer);
+    document.getElementById('claimMsg').textContent = '领取中...';
+    const tx = await stake.claim(index);
+    await tx.wait();
+    document.getElementById('claimMsg').textContent = '✅ 领取成功！';
+    loadStakeInfo();
+  } catch(e) {
+    document.getElementById('claimMsg').textContent = '❌ ' + (e.message||e).substring(0,100);
+  }
+}
+
+loadPrice();
+setInterval(loadPrice, 30000);
+</script>
 </body>
 </html>
